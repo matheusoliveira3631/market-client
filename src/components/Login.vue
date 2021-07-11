@@ -2,31 +2,32 @@
   <div id='bg'>
     <div id='fg'>
       <div id='login-ctn' class='rounded d-flex flex-column'>
-        <h5 class='d-flex flex-column'>
+        <h5 class='d-flex flex-column' id='title'>
           Supermercados confiança
           <small class='text-muted'>Login</small>
-        </h5>  
+          <p id='password-error' v-if="passwordError">Senha incorreta</p> 
+        </h5> 
+         
         <form @submit='submitForm'>
-          <div id='forms-id' class='form-input'>
+          <div id='forms-id' class='form-input' >
             <div class='icon'>
               <img src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/user_icon_copy.png'>
             </div>
-            <input type='number' name='employee_id' id='idField' placeholder='I.D de funcionário' v-model="employeeId">
+            <input type='number' name='employee_id' id='idField' placeholder='I.D de funcionário' v-model="employeeId" @blur="blur($event.srcElement)" data-bs-toggle="tooltip" data-bs-placement="left" title="Campo vazio">
           </div>
-          <div id='forms-password' class='form-input'>
+          <div id='forms-password' class='form-input' >
             <div class='icon'>
               <img src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/lock_icon_copy.png'>
             </div>
-            <input type='password' placeholder='Senha' v-model="password">
+            <input type='password' name='password' placeholder='Senha' v-model="password" @blur="blur($event.srcElement)" data-bs-toggle="tooltip" data-bs-placement="left" title="Campo vazio">
           </div>
           <div id='btn-container' class='d-flex'>
-            <p type='submit' class='btn rounded-pill' @click="employeeSubmit">Caixa</p>
-            <p class='btn rounded-pill' @click="adminSubmit">Administrador</p>
+            <p id='employeeButton' type='submit' class='btn rounded-pill' @click="submit($event.srcElement)">Caixa</p>
+            <p id='adminButton' class='btn rounded-pill' @click="submit($event.srcElement)">Administrador</p>
           </div>
         </form>
         <div id='footer'>
           <h6 class='fs-6 fw-light'>Perdeu sua senha? <a href='#'>Contate um administrador</a></h6>
-          <p>{{employeeId}}</p>
         </div>
       </div>
       
@@ -41,33 +42,79 @@
 </template>
 
 <script>
+import axios from 'axios'
+import bootstrap from 'bootstrap/dist/js/bootstrap.bundle'
+
 //change later
-//const baseUrl = 'http://localhost:3000/'
-//import axios from 'axios'
+const apiUrl = 'http://localhost:3000'
 
 export default {
     name:'Login', 
     data: function(){
       return{
-        idError:false,
-        passwordError:false,
         employeeId:null,
         password:null,
+        passwordError:false
       }
     },
     methods:{
-      formvalidation:function(){
-        if (!this.employeeId){
-          this.idError=true
-        } 
-        if(!this.password){
-          this.passwordError=true
+      toggleClass:function(element, className){
+        if (element.classList.contains(className)){
+          element.classList.remove(className)
+        }else{
+          element.classList.add(className)
         }
       },
-      employeeSubmit:function(){
-        this.formvalidation()
+      toggleTooltip:function(element){
+        let tooltip = new bootstrap.Tooltip(element,{
+          trigger:'manual'
+        })
+        tooltip.show()
+        setTimeout(() => {
+          tooltip.hide()
+        }, 2000);
       },
-
+      toggleBanner:function(){
+        const banner=document.getElementById('loading-banner')
+        this.toggleClass(banner, 'slideout')
+      },
+      submit:async function(obj){
+        let url=''
+        obj.id=='employee_Button' ? url=`${apiUrl}/login` : url = `${apiUrl}/login/admin`
+        if (this.employeeId && this.password){
+          this.toggleBanner()
+          try{
+          let response = await axios.post(url ,{
+            'employee_id':this.employeeId,
+            'password':this.password
+            
+          })
+            if (response.status==200){
+            //redirect
+            console.log('ok')
+          }
+          }catch{
+            this.passwordError=true
+            setTimeout(()=>{
+              this.passwordError=false
+            }, 5000)
+          }
+          setTimeout(()=>{
+            this.toggleBanner()
+          },1500)
+        }
+      },
+      blur:function(obj){
+        if (obj.name=='employee_id'){
+          if (!this.employeeId){
+            this.toggleTooltip(obj)
+          }
+        }else{
+          if (!this.password){
+            this.toggleTooltip(obj)
+          }
+        }
+      }
     }
 }
 </script>
@@ -159,6 +206,17 @@ input::-webkit-inner-spin-button {
   height: inherit;
   width: inherit;
   background-color: rgba(0, 0, 0, 0.65);
+}
+
+#title{
+  position:relative;
+}
+
+#password-error{
+  position:absolute;
+  top:125%;
+  font-size:1rem;
+  color: #DC6180
 }
 
 #login-ctn{
