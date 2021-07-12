@@ -92,6 +92,7 @@ export default {
           }).then((response)=>{
             if (response.status==200){
             //redirect
+            this.$store.commit('setAuth', true)
             this.$router.push({name:redirectUrl})
           }
           }).catch((err)=>{
